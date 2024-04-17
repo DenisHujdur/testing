@@ -38,7 +38,7 @@ if authentication_status:
 
     def extract_figure_references(text):
         # Regular expression to find figure references like "figure 3.1k"
-        pattern = r"figure\s+(\d+(\.\d+)*[a-z]*)"
+        pattern = r"figur\s+(\d+(\.\d+)*[a-z]*)"
         matches = re.findall(pattern, text, re.IGNORECASE)
         return [match[0] for match in matches]
 
@@ -107,12 +107,13 @@ if authentication_status:
 
             # Display images based on figure references
             for ref in figure_references:
-                image_path = f'figure_{ref}.jpg'  # Assuming images are named like "figure_3.1k.jpg"
+                image_path = f'figur_{ref}.jpg'  # Assuming images are named like "figure_3.1k.jpg"
                 print("Image Path:", image_path)
                 if os.path.exists(image_path):
-                    st.image(image_path, caption=f'Figure {ref}', use_column_width=True)
+                    st.image(image_path, caption=f'figur {ref}', use_column_width=True)
                 else:
                     print("Image not found:", image_path)
+                    st.write(f"Image not found: {image_path}")
 
     if __name__ == '__main__':
         main()
