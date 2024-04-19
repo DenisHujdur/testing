@@ -14,6 +14,13 @@ import os
 import pickle
 from pathlib import Path
 import streamlit_authenticator as stauth
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+
+import io
+from googleapiclient.http import MediaIoBaseDownload
+
+
 
 st.set_page_config(page_title="Fråga AMA Hus")
 
@@ -77,14 +84,47 @@ if authentication_status:
 
         return knowledgebase
 
+    def fetch_image_from_drive(file_name):
+    # Initialize the Google Drive API
+        SCOPES = ['https://www.googleapis.com/auth/drive']
+        SERVICE_ACCOUNT_FILE = 'pdf-python-420718-4a9ce0b58697.json'
+
+        creds = None
+        creds = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+        service = build('drive', 'v3', credentials=creds)
+
+        # Search for the image file in Google Drive
+        results = service.files().list(q=f"name='{file_name}'").execute()
+        items = results.get('files', [])
+
+        if not items:
+            raise ValueError(f"No image file found with the name: {file_name}")
+
+        # Get the file ID of the first matching file
+        file_id = items[0]['id']
+
+        # Fetch image content using file ID
+        request = service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+        
+        # Return image content
+        return fh.getvalue()
+
+
     def main():
         load_dotenv()
         st.image('./header.png', caption=None, width=500)
         st.header(":green_book: Fråga AMA Hus")
         
         # Define the URL of the PDF file on Google Drive
-        pre_uploaded_pdf_url = "https://drive.google.com/uc?id=1Ch26tWqB_N-X--D83fr8MOcte6Bgplwy"
-       # https://drive.google.com/file/d/1Ch26tWqB_N-X--D83fr8MOcte6Bgplwy/view?usp=sharing
+        pre_uploaded_pdf_url = "https://drive.google.com/uc?id=1H1Z6VreUc6V4YpN_DIey2aHMHrrxsRGJ"
+       # https://drive.google.com/file/d/1H1Z6VreUc6V4YpN_DIey2aHMHrrxsRGJ/view?usp=drive_link
 
         # Process the PDF file and cache the result
         with st.spinner("Laddar..."):  # Display a spinning bar while processing
@@ -107,13 +147,13 @@ if authentication_status:
 
             # Display images based on figure references
             for ref in figure_references:
-                image_path = f'figur_{ref}.jpg'  # Assuming images are named like "figure_3.1k.jpg"
-                print("Image Path:", image_path)
-                if os.path.exists(image_path):
-                    st.image(image_path, caption=f'figur {ref}', use_column_width=True)
-                else:
-                    print("Image not found:", image_path)
-                    st.write(f"Image not found: {image_path}")
+                try:
+                    # Fetch image from Google Drive based on figure reference
+                    image_content = fetch_image_from_drive(f"figur_{ref}.jpg")
+                    st.image(image_content, caption=f'figur {ref}', use_column_width=True)
+                except ValueError as e:
+                    print(str(e))
+                    st.write(f"Failed to fetch image for reference {ref}")
 
     if __name__ == '__main__':
         main()
