@@ -85,7 +85,7 @@ if authentication_status:
         return knowledgebase
 
     def fetch_image_from_drive(file_name):
-    # Initialize the Google Drive API
+        # Initialize the Google Drive API (remaining code unchanged)
         SCOPES = ['https://www.googleapis.com/auth/drive']
         SERVICE_ACCOUNT_FILE = 'pdf-python-420718-4a9ce0b58697.json'
 
@@ -95,15 +95,26 @@ if authentication_status:
 
         service = build('drive', 'v3', credentials=creds)
 
-        # Search for the image file in Google Drive
-        results = service.files().list(q=f"name='{file_name}'").execute()
+        # Search for the image files in Google Drive with the specified name
+        results = service.files().list(q=f"mimeType='image/jpeg' and name contains '{file_name}'").execute()
         items = results.get('files', [])
 
         if not items:
-            raise ValueError(f"No image file found with the name: {file_name}")
+            raise ValueError(f"No image file found with the name containing: {file_name}")
+
+        # Filter the files based on the specified extension
+        matching_files = [file for file in items if file['name'].endswith('.jpg')]
+
+        if not matching_files:
+            raise ValueError(f"No image file found with the name containing '{file_name}' and ending with '.jpg'")
 
         # Get the file ID of the first matching file
-        file_id = items[0]['id']
+        file_id = matching_files[0]['id']
+
+
+# pdf-python-420718-4a9ce0b58697.json
+    
+
 
         # Fetch image content using file ID
         request = service.files().get_media(fileId=file_id)
@@ -123,8 +134,9 @@ if authentication_status:
         st.header(":green_book: Fråga AMA Hus")
         
         # Define the URL of the PDF file on Google Drive
-        pre_uploaded_pdf_url = "https://drive.google.com/uc?id=1H1Z6VreUc6V4YpN_DIey2aHMHrrxsRGJ"
-       # https://drive.google.com/file/d/1H1Z6VreUc6V4YpN_DIey2aHMHrrxsRGJ/view?usp=drive_link
+        pre_uploaded_pdf_url = "https://drive.google.com/uc?id=1Xhy0L0gi88i9Pf0_GzlG2tTdzZz40xv_"
+       # https://drive.google.com/file/d/1Xhy0L0gi88i9Pf0_GzlG2tTdzZz40xv_/view?usp=drive_link
+       
 
         # Process the PDF file and cache the result
         with st.spinner("Laddar..."):  # Display a spinning bar while processing
