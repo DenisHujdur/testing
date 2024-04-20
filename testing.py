@@ -20,8 +20,6 @@ from googleapiclient.discovery import build
 import io
 from googleapiclient.http import MediaIoBaseDownload
 
-
-
 st.set_page_config(page_title="Fråga AMA Hus")
 
 # --- ANVÄNDARUPPGIFTER ---
@@ -44,10 +42,13 @@ if authentication_status == None:
 if authentication_status:
 
     def extract_figure_references(text):
-        # Regular expression to find figure references like "figure 3.1k"
-        pattern = r"figur\s+(\d+(\.\d+)*[a-z]*)"
+        # Regular expression to find figure references like "figure 3.1k" or "figure 3/14" or "figure 3-14" or "figure 3.14"
+        pattern = r"figur\s+([\w/.-]+)"
         matches = re.findall(pattern, text, re.IGNORECASE)
-        return [match[0] for match in matches]
+        return matches
+
+
+
 
     @st.cache(allow_output_mutation=True)
     def process_pdf(pdf_url):
@@ -134,9 +135,8 @@ if authentication_status:
         st.header(":green_book: Fråga AMA Hus")
         
         # Define the URL of the PDF file on Google Drive
-        pre_uploaded_pdf_url = "https://drive.google.com/uc?id=1Xhy0L0gi88i9Pf0_GzlG2tTdzZz40xv_"
-       # https://drive.google.com/file/d/1Xhy0L0gi88i9Pf0_GzlG2tTdzZz40xv_/view?usp=drive_link
-       
+        pre_uploaded_pdf_url = "https://drive.google.com/uc?id=1OtVY2AlnSk-hyjoVfRNl1u9qxyRKI2Ho"
+       #https://drive.google.com/file/d/1OtVY2AlnSk-hyjoVfRNl1u9qxyRKI2Ho/view?usp=drive_link
 
         # Process the PDF file and cache the result
         with st.spinner("Laddar..."):  # Display a spinning bar while processing
@@ -160,9 +160,11 @@ if authentication_status:
             # Display images based on figure references
             for ref in figure_references:
                 try:
+                    # Use the figure reference from the text as caption
+                    # st.write(f"figur {ref}")
                     # Fetch image from Google Drive based on figure reference
                     image_content = fetch_image_from_drive(f"figur_{ref}.jpg")
-                    st.image(image_content, caption=f'figur {ref}', use_column_width=True)
+                    st.image(image_content, caption=f'figur {ref}', width=500)
                 except ValueError as e:
                     print(str(e))
                     st.write(f"Failed to fetch image for reference {ref}")
